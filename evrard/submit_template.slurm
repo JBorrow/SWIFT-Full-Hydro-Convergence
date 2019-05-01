@@ -5,8 +5,8 @@
 #SBATCH -A dp004
 #SBATCH -t 72:00:00
 #SBATCH -N 1
-#SBATCH -o output.out
-#SBATCH -e error.err
+#SBATCH -o outputs/output_HYDRO.out
+#SBATCH -e outputs/error_HYDRO.err
 #SBATCH --exclusive
 
 for npart in 8 16 32 64 128 256
@@ -19,6 +19,10 @@ do
 
         cd $kernel/HYDRO
 
-        ../../../../build/$kernel/HYDRO/examples/swift --hydro --self-gravity --threads=28 ../../../evrard.yml
+        ../../../../../build/$kernel/HYDRO/examples/swift --hydro --self-gravity --threads=28 ../../../evrard.yml
+        
+        cd ../..
     done
+
+    cd ..
 done

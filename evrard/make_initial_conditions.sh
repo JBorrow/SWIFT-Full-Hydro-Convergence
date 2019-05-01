@@ -5,7 +5,9 @@ do
     mkdir $npart
     cd $npart
 
-    python3 ../makeIC.py $total_npart
+    echo "Creating initial conditions for ${npart}^3 (${total_npart}) particles"
+
+    python3 ../makeIC.py -n $total_npart
 
     cd ..
 done
