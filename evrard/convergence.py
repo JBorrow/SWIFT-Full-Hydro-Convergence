@@ -135,7 +135,7 @@ def calculate_norms(particle_data: dict):
                         L1 = L1_norm(v, analytic_velocity)
                         L2 = L2_norm(v, analytic_velocity)
 
-                        this_output["velocities"] = (L1, L2)
+                        this_output["velocities"] = [L1, L2]
                     else:
                         y = getattr(this_data.gas, property).value[mask]
 
@@ -143,6 +143,8 @@ def calculate_norms(particle_data: dict):
 
                         L1 = L1_norm(y, analytic_y)
                         L2 = L2_norm(y, analytic_y)
+
+                        this_output[property] = [L1, L2]
 
                 output[num_part][kernel][scheme] = this_output
 
