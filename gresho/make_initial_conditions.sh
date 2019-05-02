@@ -17,7 +17,7 @@ do
             mkdir $kernel
             cd $kernel
 
-            python3 ../../makeIC.py ../../../../../build/glass_files/$scheme/$kernel/glassCube_$npart.hdf5
+            python3 ../../../makeIC.py ../../../../../build/glass_files/$scheme/$kernel/glassCube_$npart.hdf5
 
             cd ..
         done
