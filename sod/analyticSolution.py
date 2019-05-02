@@ -185,3 +185,38 @@ def analytic(
         return dict(x=x_s + 1, v=v_s, rho=rho_s, P=P_s, u=u_s, S=s_s), x_pos_for_conv
     else:
         return dict(x=x_s + 1, v=v_s, rho=rho_s, P=P_s, u=u_s, S=s_s)
+
+
+def smooth_analytic(
+        time,
+    ):
+
+    reference = analytic(time)
+
+    smooth_reference = {}
+
+    for key, value in reference.items():
+        if key != "x":
+            smooth_reference[key] = interp1d(
+                reference["x"], value, fill_value="extrapolate"
+            )
+        else:
+            smooth_reference[key] = reference[key]
+
+    return smooth_reference
+
+
+def smooth_analytic_same_api_as_swiftsimio(
+        time
+    ):
+
+    smooth_reference = smooth_analytic(time)
+
+    output = dict(
+        velocities=smooth_reference["v"],
+        density=smooth_reference["rho"],
+        pressure=smooth_reference["P"],
+        internal_energy=smooth_reference["u"],
+    )
+
+    return smooth_reference["x"], output
