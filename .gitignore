@@ -10,5 +10,6 @@
 */outputs/*
 
 */*.pdf
+*/*/*.pdf
 
 *.DS_Store
