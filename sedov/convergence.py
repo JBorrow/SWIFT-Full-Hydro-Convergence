@@ -15,7 +15,7 @@ from collections import namedtuple
 
 from tqdm import tqdm
 
-radius_range_to_calculate_in = [0.02, 0.6]
+radius_range_to_calculate_in = [0.2, 0.45]
 
 metadata = namedtuple("Metadata", ["num_part", "kernels", "schemes", "threads"])
 
