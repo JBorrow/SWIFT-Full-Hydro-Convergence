@@ -126,11 +126,11 @@ def calculate_norms(particle_data: dict):
                 radii = radii[mask]
 
                 for property in analytic.keys():
-                    if property == "velocity":
+                    if property == "velocities":
                         v = this_data.gas.velocities.value[mask]
                         v = np.sqrt(np.sum(v * v, axis=1))
 
-                        analytic_velocity = analytic["velocity"](radii)
+                        analytic_velocity = analytic["velocities"](radii)
 
                         L1 = L1_norm(v, analytic_velocity)
                         L2 = L2_norm(v, analytic_velocity)
