@@ -3,6 +3,9 @@ Extracts the runtimes from the final runs.
 """
 
 import numpy as np
+import yaml
+
+from tqdm import tqdm
 
 from convergence import read_metadata
 
@@ -36,7 +39,7 @@ def get_runtime_for_all(meta):
             }
             for kernel in kernels
         }
-        for num_part in number_of_particles
+        for num_part in tqdm(number_of_particles)
     }
 
     
