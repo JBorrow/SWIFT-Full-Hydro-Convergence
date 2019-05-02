@@ -4,3 +4,5 @@ submit_anarchy-pu.slurm
 submit_gizmo-mfm.slurm
 submit_gizmo-mfv.slurm
 submit_pressure-energy.slurm
+
+norms.yml
