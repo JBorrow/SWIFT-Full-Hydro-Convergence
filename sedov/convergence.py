@@ -79,7 +79,7 @@ def load_particle_data(meta: metadata) -> Dict[str, Dict[str, Dict[str, SWIFTDat
     return {
         num_part: {
             kernel: {
-                scheme: load_safe(f"{num_part}/{kernel}/{scheme}/gresho_0011.hdf5")
+                scheme: load_safe(f"{num_part}/{kernel}/{scheme}/sedov_0005.hdf5")
                 for scheme in schemes
             }
             for kernel in kernels
@@ -160,7 +160,7 @@ if __name__ == "__main__":
     import argparse as ap
 
     parser = ap.ArgumentParser(
-        description="Script to make convergence DATA, not plot, for the Gresho Vortex."
+        description="Script to make convergence DATA, not plot, for the Sedov Blast."
     )
 
     parser.add_argument(
