@@ -5,7 +5,7 @@ Creates a convergence plot for the Evrard collapse.
 from analyticSolution import smooth_analytic_same_api_as_swiftsimio
 
 import yaml
-import numpy as num_part
+import numpy as np
 from scipy.interpolate import interp1d
 
 from swiftsimio import load, SWIFTDataset
