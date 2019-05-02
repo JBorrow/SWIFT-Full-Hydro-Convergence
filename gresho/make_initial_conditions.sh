@@ -12,7 +12,7 @@ do
 
         echo "Creating initial conditions for ${npart}^3 (${total_npart}) particles with ${kernel} kernel"
 
-        python3 ../../makeIC.py ../../../build/glass_files/$kernel/glassCube_$npart.hdf5
+        python3 ../../makeIC.py ../../../../build/glass_files/$kernel/glassCube_$npart.hdf5
 
         cd ..
     done
