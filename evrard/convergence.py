@@ -5,7 +5,7 @@ Creates a convergence plot for the Evrard collapse.
 from analyticSolution import smooth_analytic_same_api_as_swiftsimio
 
 import yaml
-import numpy as np
+import numpy as num_part
 from scipy.interpolate import interp1d
 
 from swiftsimio import load, SWIFTDataset
@@ -17,7 +17,7 @@ from tqdm import tqdm
 
 radius_range_to_calculate_in = [5e-2, 0.9]
 
-metadata = namedtuple("Metadata", ["np", "kernels", "schemes", "threads"])
+metadata = namedtuple("Metadata", ["num_part", "kernels", "schemes", "threads"])
 
 
 def read_metadata(filename: str = "data.yml"):
@@ -29,7 +29,7 @@ def read_metadata(filename: str = "data.yml"):
         data = dict(yaml.load(handle))
 
     return metadata(
-        np=data["number_of_particles"],
+        num_part=data["number_of_particles"],
         kernels=data["kernels"],
         schemes=data["schemes"],
         threads=data["threads"],
@@ -72,19 +72,19 @@ def load_particle_data(meta: metadata) -> Dict[str, Dict[str, Dict[str, SWIFTDat
     Loads the particle data (as swiftsimio objects), i.e. this does not yet actually read the data.
     """
 
-    number_of_particles = meta.np
+    number_of_particles = meta.num_part
     schemes = meta.schemes
     kernels = meta.kernels
 
     return {
-        np: {
+        num_part: {
             kernel: {
-                scheme: load_safe(f"{np}/{kernel}/{scheme}/evrard_0008.hdf5")
+                scheme: load_safe(f"{num_part}/{kernel}/{scheme}/evrard_0008.hdf5")
                 for scheme in schemes
             }
             for kernel in kernels
         }
-        for np in number_of_particles
+        for num_part in number_of_particles
     }
 
 
@@ -102,12 +102,12 @@ def calculate_norms(particle_data: dict):
 
     output = {}
 
-    for np in tqdm(number_of_particles):
-        output[np] = {}
+    for num_part in tqdm(number_of_particles):
+        output[num_part] = {}
         for kernel in kernels:
-            output[np][kernel] = {}
+            output[num_part][kernel] = {}
             for scheme in schemes:
-                this_data = particle_data[np][kernel][scheme]
+                this_data = particle_data[num_part][kernel][scheme]
 
                 if this_data == None:
                     continue
@@ -144,7 +144,7 @@ def calculate_norms(particle_data: dict):
                         L1 = L1_norm(y, analytic_y)
                         L2 = L2_norm(y, analytic_y)
 
-                output[np][kernel][scheme] = this_output
+                output[num_part][kernel][scheme] = this_output
 
     return output
 
