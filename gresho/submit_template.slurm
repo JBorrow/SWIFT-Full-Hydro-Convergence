@@ -21,7 +21,7 @@ do
 
         ln -s ../../../$npart/HYDRO/$kernel/greshoVortex.hdf5 ./greshoVortex.hdf5
 
-        ../../../../../build/$kernel/HYDRO/examples/swift --hydro --self-gravity --threads=28 ../../../gresho.yml
+        ../../../../../build/$kernel/HYDRO/examples/swift --hydro --threads=28 ../../../gresho.yml
         
         cd ../..
     done
