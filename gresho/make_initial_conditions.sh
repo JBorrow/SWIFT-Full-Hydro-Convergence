@@ -1,4 +1,4 @@
-for npart in 8 16 32 64 128 256
+for npart in 16 32 64 128 256
 do
     mkdir $npart
     cd $npart
@@ -12,7 +12,7 @@ do
 
         echo "Creating initial conditions for ${npart}^3 (${total_npart}) particles with ${scheme}"
 
-        for kernel in cubic-spline quintic-sline wendland-C2
+        for kernel in cubic-spline quintic-spline wendland-C2
         do
             mkdir $kernel
             cd $kernel
