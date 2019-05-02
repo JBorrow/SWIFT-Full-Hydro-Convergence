@@ -3,19 +3,19 @@ do
     mkdir $npart
     cd $npart
 
+    total_npart=$(($npart*$npart*$npart))
+
     for scheme in gadget2 minimal pressure-energy anarchy-pu gizmo-mfm gizmo-mfv
     do
         mkdir $scheme
         cd $scheme
 
+        echo "Creating initial conditions for ${npart}^3 (${total_npart}) particles with ${scheme}"
+
         for kernel in cubic-spline quintic-sline wendland-C2
         do
             mkdir $kernel
             cd $kernel
-
-            total_npart=$(($npart*$npart*$npart))
-
-            echo "Creating initial conditions for ${npart}^3 (${total_npart}) particles with ${kernel} kernel"
 
             python3 ../../makeIC.py ../../../../../build/glass_files/$scheme/$kernel/glassCube_$npart.hdf5
 
