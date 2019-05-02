@@ -67,7 +67,7 @@ def load_safe(filename):
         return None
 
 
-def load_particle_data(meta: metadata) -> Dict[Dict[Dict[SWIFTDataset]]]:
+def load_particle_data(meta: metadata) -> Dict[str, Dict[str, Dict[str, SWIFTDataset]]]:
     """
     Loads the particle data (as swiftsimio objects), i.e. this does not yet actually read the data.
     """
