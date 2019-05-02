@@ -81,7 +81,7 @@ def filename(args):
     """
 
     if args.output == "DEFAULT":
-        return f"{args.kernel}_L{args.norm}.pdf"
+        return f"{args.kernel}_L{args.norm}_npart.pdf"
     else:
         return args.output
 
@@ -145,12 +145,6 @@ def make_plot(args):
 
     return
     
-    
-
-
-
-
-
 if __name__ == "__main__":
     import argparse as ap
 
@@ -179,7 +173,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "-o",
         "--output",
-        help="Output filename. Default: <kernel>_L<norm>.pdf",
+        help="Output filename. Default: <kernel>_L<norm>_npart.pdf",
         required=False,
         type=str,
         default="DEFAULT"
