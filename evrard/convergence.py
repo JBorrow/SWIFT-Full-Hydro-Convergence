@@ -11,10 +11,13 @@ from scipy.interpolate import interp1d
 from swiftsimio import load, SWIFTDataset
 
 from typing import List, Dict, Callable, Tuple
+from collections import namedtuple
 
 from tqdm import tqdm
 
 radius_range_to_calculate_in = [5e-2, 0.9]
+
+metadata = namedtuple("Metadata", ["np", "kernels", "schemes", "threads"])
 
 
 def read_metadata(filename: str = "data.yml"):
@@ -25,7 +28,12 @@ def read_metadata(filename: str = "data.yml"):
     with open(filename, "r") as handle:
         data = dict(yaml.load(handle))
 
-    return data["number_of_particles"], data["kernels"], data["schemes"], data["threads"]
+    return metadata(
+        np=data["number_of_particles"],
+        kernels=data["kernels"],
+        schemes=data["schemes"],
+        threads=data["threads"],
+    )
 
 
 def L1_norm(observed, expected):
@@ -43,7 +51,7 @@ def L2_norm(observed, expected):
     Returns the L2 norm per particle.
     """
 
-    norm = np.sum((observed - expected)**2) / len(observed)
+    norm = np.sum((observed - expected) ** 2) / len(observed)
 
     return norm
 
@@ -59,19 +67,24 @@ def load_safe(filename):
         return None
 
 
-def load_particle_data(number_of_particles: List, schemes: List, kernels: List) -> Dict[Dict[Dict[SWIFTDataset]]]:
+def load_particle_data(meta: metadata) -> Dict[Dict[Dict[SWIFTDataset]]]:
     """
     Loads the particle data (as swiftsimio objects), i.e. this does not yet actually read the data.
     """
 
-    return {np:
-        {
-            kernel: 
-            {scheme: 
-                load(f"{np}/{kernel}/{scheme}/evrard_0008.hdf5")
+    number_of_particles = meta.np
+    schemes = meta.schemes
+    kernels = meta.kernels
+
+    return {
+        np: {
+            kernel: {
+                scheme: load_safe(f"{np}/{kernel}/{scheme}/evrard_0008.hdf5")
                 for scheme in schemes
-            } for kernel in kernels
-        } for np in number_of_particles
+            }
+            for kernel in kernels
+        }
+        for np in number_of_particles
     }
 
 
@@ -81,7 +94,7 @@ def calculate_norms(particle_data: dict):
     available.
     """
 
-    x, analytic = smooth_analytic_same_api_as_swiftsimio(gas_gamma=5./3.)
+    x, analytic = smooth_analytic_same_api_as_swiftsimio(gas_gamma=5.0 / 3.0)
 
     number_of_particles = list(particle_data.keys())
     kernels = list(particle_data[number_of_particles[0]].keys())
@@ -96,20 +109,26 @@ def calculate_norms(particle_data: dict):
             for scheme in schemes:
                 this_data = particle_data[np][kernel][scheme]
 
+                if this_data == None:
+                    continue
+
                 this_output = {}
 
                 boxsize = this_data.metadata.boxsize[0].value
                 coords = this_data.gas.coordinates.value - 0.5 * boxsize
-                radii = np.sqrt(np.sum(coords*coords, axis=0))
+                radii = np.sqrt(np.sum(coords * coords, axis=0))
 
                 # Now need to mask the data to lie within the allowed region.
-                mask = np.logical_and(radii > radius_range_to_calculate_in[0], radii < radius_range_to_calculate_in[1])
+                mask = np.logical_and(
+                    radii > radius_range_to_calculate_in[0],
+                    radii < radius_range_to_calculate_in[1],
+                )
                 coords = coords[mask]
 
                 for property in analytic.keys():
                     if property == "velocity":
                         v = this_data.gas.velocities.value
-                        v = np.sqrt(np.sum(v*v, axis=0))
+                        v = np.sqrt(np.sum(v * v, axis=0))
 
                         analytic_velocity = analytic["velocity"](coords)
 
@@ -119,7 +138,7 @@ def calculate_norms(particle_data: dict):
                         this_output["velocities"] = (L1, L2)
                     else:
                         y = getattr(this_data.gas, property).value
-                        
+
                         analytic_y = analytic[property](coords)
 
                         L1 = L1_norm(y, analytic_y)
@@ -130,7 +149,38 @@ def calculate_norms(particle_data: dict):
     return output
 
 
+if __name__ == "__main__":
+    import argparse as ap
 
+    parser = ap.ArgumentParser(
+        description="Script to make convergence DATA, not plot, for the Evrard Collapse."
+    )
 
+    parser.add_argument(
+        "-m",
+        "--metadata",
+        help="Location of metadata file. Default: data.yml",
+        type=str,
+        required=False,
+        default="data.yml",
+    )
 
+    parser.add_argument(
+        "-o",
+        "--output",
+        help="Output filename location. Default: norms.yml",
+        type=str,
+        required=False,
+        default="norms.yml",
+    )
 
+    args = parser.parse_args()
+
+    meta = read_metadata(args.metadata)
+    particle_data = load_particle_data(meta)
+    norms = calculate_norms(particle_data)
+
+    with open(args.output, "w") as handle:
+        yaml.dump(norms, handle)
+
+    exit(0)
