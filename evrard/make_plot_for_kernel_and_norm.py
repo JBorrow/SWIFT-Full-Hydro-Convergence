@@ -6,6 +6,8 @@ import matplotlib.pyplot as plt
 import numpy as np
 import yaml
 
+from scipy.optimize import curve_fit
+
 try:
     plt.style.use("mnras_durham")
 except:
@@ -84,6 +86,26 @@ def filename(args):
         return args.output
 
 
+def linear(x, m, c):
+    return m * x + c
+
+
+def fitted_line(x, y):
+    """
+    Return x, y for a fitted line for the input x, y, but in log-2 space.
+    """
+
+    x_log_2 = np.log2(np.array(x))
+    y_log_2 = np.log2(np.array(y))
+
+    popt, pcov = curve_fit(linear, x_log_2, y_log_2)
+
+    new_x = np.linspace(x[0], x[-1], 100)
+    new_y = 2**(linear(np.log2(new_x), *popt))
+
+    return new_x, new_y
+
+
 def make_plot(args):
     """
     Creates the plot based on the arguments.
@@ -102,7 +124,7 @@ def make_plot(args):
         a.set_xlabel("Particle number")
         a.set_ylabel(f"L{args.norm} Norm for {pname}")
 
-        for (c, sid), sname in zip(enumerate(scheme_identifiers), scheme_names) :
+        for (c, sid), sname in zip(enumerate(scheme_identifiers), scheme_names):
             this_data = extract_from_data(
                 data,
                 sid,
@@ -111,7 +133,10 @@ def make_plot(args):
                 args.norm
             )
 
-            a.plot(*this_data, label=sname, ms=4, color=f"C{c}")
+            fitted_data = fitted_line(*this_data)
+
+            a.scatter(*this_data, color=f"C{c}", s=2)
+            a.plot(*fitted_data, color=f"C{c}", label=sname)
 
     ax[-1].legend()
 
