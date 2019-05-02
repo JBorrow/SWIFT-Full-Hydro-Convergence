@@ -33,7 +33,7 @@ def get_runtime_for_all(meta):
         num_part: {
             kernel: {
                 scheme: get_runtime_from_timesteps_file(
-                    f"{num_part}/{kernel}/{scheme}/timesteps_{meta.threads[0]}"
+                    f"{num_part}/{kernel}/{scheme}/timesteps_{meta.threads[0]}.txt"
                 )
                 for scheme in schemes
             }
