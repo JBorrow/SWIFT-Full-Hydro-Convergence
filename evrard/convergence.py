@@ -43,7 +43,7 @@ def L1_norm(observed, expected):
 
     norm = np.sum(abs(observed - expected)) / len(observed)
 
-    return norm
+    return float(norm)
 
 
 def L2_norm(observed, expected):
@@ -53,7 +53,7 @@ def L2_norm(observed, expected):
 
     norm = np.sum((observed - expected) ** 2) / len(observed)
 
-    return norm
+    return float(norm)
 
 
 def load_safe(filename):
