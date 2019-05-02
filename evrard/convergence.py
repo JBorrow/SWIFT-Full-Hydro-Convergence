@@ -116,21 +116,21 @@ def calculate_norms(particle_data: dict):
 
                 boxsize = this_data.metadata.boxsize[0].value
                 coords = this_data.gas.coordinates.value - 0.5 * boxsize
-                radii = np.sqrt(np.sum(coords * coords, axis=0))
+                radii = np.sqrt(np.sum(coords * coords, axis=1))
 
                 # Now need to mask the data to lie within the allowed region.
                 mask = np.logical_and(
                     radii > radius_range_to_calculate_in[0],
                     radii < radius_range_to_calculate_in[1],
                 )
-                coords = coords[mask]
+                radii = radii[mask]
 
                 for property in analytic.keys():
                     if property == "velocity":
                         v = this_data.gas.velocities.value
-                        v = np.sqrt(np.sum(v * v, axis=0))
+                        v = np.sqrt(np.sum(v * v, axis=1))
 
-                        analytic_velocity = analytic["velocity"](coords)
+                        analytic_velocity = analytic["velocity"](radii)
 
                         L1 = L1_norm(v, analytic_velocity)
                         L2 = L2_norm(v, analytic_velocity)
@@ -139,7 +139,7 @@ def calculate_norms(particle_data: dict):
                     else:
                         y = getattr(this_data.gas, property).value
 
-                        analytic_y = analytic[property](coords)
+                        analytic_y = analytic[property](radii)
 
                         L1 = L1_norm(y, analytic_y)
                         L2 = L2_norm(y, analytic_y)
