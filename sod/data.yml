@@ -1,3 +1,7 @@
-number_of_particles: [1]
+number_of_particles: [16, 32, 64, 128]
 
-threads: [1]
+threads: [28]
+
+kernels: ["cubic-spline", "quintic-spline", "wendland-C2"]
+
+schemes: ["gadget2", "minimal", "pressure-energy", "anarchy-pu", "gizmo-mfm", "gizmo-mfv"]
