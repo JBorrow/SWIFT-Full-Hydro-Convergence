@@ -33,6 +33,8 @@ def smooth_analytic(
             smooth_reference[key] = interp1d(
                 reference["x"], value, fill_value="extrapolate"
             )
+        else:
+            smooth_reference[key] = reference[key]
 
     return smooth_reference
 
