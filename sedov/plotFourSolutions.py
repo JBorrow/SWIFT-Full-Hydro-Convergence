@@ -31,11 +31,11 @@ from swiftsimio import load
 from analyticSolution import analytic
 
 schemes = ["minimal", "pressure-energy", "anarchy-pu", "gizmo-mfm"]
-npart = 64
+npart = 32
 snap = 5
 kernel = "cubic-spline"
 names = ["Density-Energy", "Pressure-Energy", "ANARCHY-PU", "SPH-ALE"]
-key = "density"
+key = "P"
 filename = "sedov"
 
 sim = load(f"{npart}/{kernel}/{schemes[0]}/{filename}_{snap:04d}.hdf5")
@@ -147,8 +147,6 @@ def read_snapshot(sim):
     return data, x_bin, binned, sigma
 
 # We only want to plot this for the region that we actually have data for, hence the masking.
-mask = np.logical_and(ref["x"] < np.max(data["x"]), ref["x"] > np.min(data["x"]))
-ref = {k: v[mask] for k, v in ref.items()}
 
 # Now we can do the plotting.
 fig, ax = plt.subplots(2, 2)
@@ -169,64 +167,74 @@ log = dict(
     v_r=False, v_phi=False, u=False, S=False, P=False, rho=False, visc=False, diff=False
 )
 ylim = dict(
-    diff=(0.0, None), visc=(0.0, None), u=(0, 100), v_r=(-0.05, None), rho=(-0.05, None)
+    diff=(0.0, None), visc=(0.0, None), u=(0, 100), v_r=(-0.05, None), rho=(-0.05, 4.5), P=(-0.5, 6.5)
 )
 
-for scheme, axis in zip(schemes, ax):
+for scheme, name, axis in zip(schemes, names, ax):
+    if log[key]:
+        axis.semilogy()
+
+    data, x_bin, binned, sigma = read_snapshot(
+        load(f"{npart}/{kernel}/{scheme}/{filename}_{snap:04d}.hdf5")
+    )
+
+    mask = np.logical_and(ref["x"] < np.max(data["x"]), ref["x"] > np.min(data["x"]))
+    ref_masked = {k: v[mask] for k, v in ref.items()}
+
+    # Raw data
+    axis.plot(
+        data["x"],
+        data[key],
+        ".",
+        color="C1",
+        ms=0.5,
+        alpha=0.7,
+        markeredgecolor="none",
+        rasterized=True,
+        zorder=0,
+    )
+    # Binned data
+    axis.errorbar(
+        x_bin,
+        binned[key],
+        yerr=sigma[key],
+        fmt=".",
+        ms=3.0,
+        color="C3",
+        lw=0.5,
+        zorder=2,
+    )
+
+    axis.set_yticks([])
+    axis.set_xticks([])
+
+    # Exact solution
     try:
-        if log[key]:
-            axis.semilogy()
-
-        data, x_bin, binned, sigma = read_snapshot(
-            load(f"{npart}/{kernel}/{scheme}/{filename}_{snap:04d}.hdf5")
-        )
-
-        # Raw data
-        axis.plot(
-            data["x"],
-            data[key],
-            ".",
-            color="C1",
-            ms=0.5,
-            alpha=0.5,
-            markeredgecolor="none",
-            rasterized=True,
-            zorder=0,
-        )
-        # Binned data
-        axis.errorbar(
-            x_bin,
-            binned[key],
-            yerr=sigma[key],
-            fmt=".",
-            ms=3.0,
-            color="C3",
-            lw=0.5,
-            zorder=2,
-        )
-
-        # Exact solution
-        try:
-            axis.plot(ref["x"], ref[key], c="C0", ls="dashed", zorder=1, lw=1)
-        except KeyError:
-            # No solution :(
-            pass
-
-        axis.set_xlabel("Radius ($r$)", labelpad=0)
-        axis.set_ylabel(label, labelpad=0)
-
-        axis.set_xlim(0.15, 1.3 * r_shock)
-
-        try:
-            axis.set_ylim(*ylim[key])
-        except KeyError:
-            # No worries pal
-            pass
-
-        current_axis += 1
+        axis.plot(ref_masked["x"], ref_masked[key], c="C0", ls="dashed", zorder=1, lw=1)
     except KeyError:
-        # Mustn't have that data!
-        continue
+        # No solution :(
+        pass
+
+    axis.set_xlim(0.15, 1.3 * r_shock)
+
+    try:
+        axis.set_ylim(*ylim[key])
+    except KeyError:
+        # No worries pal
+        pass
+
     
 fig.tight_layout(pad=0.5)
+
+for scheme ,name, axis in zip(schemes, names, ax):
+    axis.text(
+       0.05,
+       0.95,
+       name,
+       transform=axis.transAxes,
+       ha="left",
+       va="top"
+    )
+
+
 fig.savefig(f"{filename}_{npart}_{key}_{kernel}_convergence.pdf", dpi=300)
