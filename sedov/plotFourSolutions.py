@@ -205,8 +205,7 @@ for scheme, name, axis in zip(schemes, names, ax):
         zorder=2,
     )
 
-    axis.set_yticks([])
-    axis.set_xticks([])
+    axis.tick_params('both', which='both', bottom=False, left=False, labelleft=False, labelbottom=False)
 
     # Exact solution
     try:

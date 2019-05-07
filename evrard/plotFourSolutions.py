@@ -57,8 +57,7 @@ except:
 
 # Read in the "solution" data and calculate those that don't exist.
 
-ref = analytic(time=sim.metadata.time.value)
-r_shock = ref.pop("r_shock")
+ref = analytic()
 
 
 def get_data_dump(metadata):
@@ -129,7 +128,7 @@ def read_snapshot(sim):
 
     
     # Bin the data
-    x_bin_edge = np.linspace(0.15, 1.3 * r_shock, 25)
+    x_bin_edge = np.logspace(-3.0, np.log10(2.0), 25)
     x_bin = 0.5 * (x_bin_edge[1:] + x_bin_edge[:-1])
     binned = {
         k: stats.binned_statistic(data["x"], v, statistic="mean", bins=x_bin_edge)[0]
@@ -164,11 +163,11 @@ plot = dict(
 )
 
 log = dict(v=False, u=True, S=False, P=True, rho=True, visc=False, diff=False)
-ylim = dict(diff=(0.0, None), visc=(0.0, None), P=(1e-2, 1e3))
+ylim = dict(diff=(0.0, None), visc=(0.0, None), P=(1e-4, 1e3))
 
 for scheme, name, axis in zip(schemes, names, ax):
     if log[key]:
-        axis.semilogy()
+        axis.loglog()
 
     data, x_bin, binned, sigma = read_snapshot(
         load(f"{npart}/{kernel}/{scheme}/{filename}_{snap:04d}.hdf5")
@@ -201,8 +200,7 @@ for scheme, name, axis in zip(schemes, names, ax):
         zorder=2,
     )
 
-    axis.set_yticks([])
-    axis.set_xticks([])
+    axis.tick_params('both', which='both', bottom=False, left=False, labelleft=False, labelbottom=False)
 
     # Exact solution
     try:
@@ -211,7 +209,7 @@ for scheme, name, axis in zip(schemes, names, ax):
         # No solution :(
         pass
 
-    axis.set_xlim(0.15, 1.3 * r_shock)
+    axis.set_xlim(3e-3, 1.0)
 
     try:
         axis.set_ylim(*ylim[key])
@@ -225,11 +223,11 @@ fig.tight_layout(pad=0.5)
 for scheme ,name, axis in zip(schemes, names, ax):
     axis.text(
        0.05,
-       0.95,
+       0.05,
        name,
        transform=axis.transAxes,
        ha="left",
-       va="top"
+       va="bottom"
     )
 
 
