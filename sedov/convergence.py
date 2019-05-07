@@ -133,7 +133,7 @@ def calculate_norms(particle_data: dict):
                         y = coords[:, 1]
 
                         vel = this_data.gas.velocities.value
-                        v_r = np.sqrt(np.sum(vel*vel, axis=1))
+                        v_r = np.sqrt(np.sum(vel*vel, axis=1))[mask]
 
                         analytic_velocity = analytic["velocities_r"](radii)
 
