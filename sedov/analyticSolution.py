@@ -198,6 +198,7 @@ def smooth_analytic(
     ):
 
     reference = analytic(time)
+    reference.pop("r_shock")
 
     smooth_reference = {}
 
