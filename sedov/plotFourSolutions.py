@@ -42,7 +42,7 @@ sim = load(f"{npart}/{kernel}/{schemes[0]}/{filename}_{snap:04d}.hdf5")
 
 # Set up plotting stuff
 try:
-    plt.style.use("mnras_durham")
+    plt.style.use("spheric_durham")
 except:
     rcParams = {
         "font.serif": ["STIX", "Times New Roman", "Times"],
