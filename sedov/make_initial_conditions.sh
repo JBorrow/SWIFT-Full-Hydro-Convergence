@@ -1,4 +1,4 @@
-for npart in 8 16 32 64 128 256
+for npart in 16 32 64 128 256
 do
     mkdir $npart
     cd $npart
