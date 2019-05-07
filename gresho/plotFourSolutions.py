@@ -214,7 +214,7 @@ for scheme, name, axis in zip(schemes, names, ax):
         # No solution :(
         pass
 
-    axis.set_xlim(3e-3, 1.0)
+    axis.set_xlim(0, 0.6)
 
     try:
         axis.set_ylim(*ylim[key])
@@ -227,12 +227,12 @@ fig.tight_layout(pad=0.5)
 
 for scheme ,name, axis in zip(schemes, names, ax):
     axis.text(
-       0.05,
-       0.05,
+       0.95,
+       0.95,
        name,
        transform=axis.transAxes,
-       ha="left",
-       va="bottom"
+       ha="right",
+       va="top"
     )
 
 
