@@ -17,6 +17,13 @@ from scipy.interpolate import interp1d
 from swiftsimio import load, SWIFTDataset
 
 from typing import List, Dict, Callable, Tuple
+from collections import namedtuple
+
+from tqdm import tqdm
+
+dx = 0.05
+
+metadata = namedtuple("Metadata", ["num_part", "kernels", "schemes", "threads"])
 
 
 def read_metadata(filename: str = "data.yml"):
@@ -27,15 +34,44 @@ def read_metadata(filename: str = "data.yml"):
     with open(filename, "r") as handle:
         data = dict(yaml.load(handle))
 
-    return data["number_of_particles"], data["threads"]
+    return metadata(
+        num_part=data["number_of_particles"],
+        kernels=data["kernels"],
+        schemes=data["schemes"],
+        threads=data["threads"],
+    )
 
 
-def load_particle_data(number_of_particles: List) -> List[SWIFTDataset]:
+def load_safe(filename):
     """
-    Loads the particle data (as swiftsimio arrays).
+    Loads (saftely) the data. If not available, returns None.
     """
 
-    return [load(f"{x}/sodShock_0001.hdf5") for x in number_of_particles]
+    try:
+        return load(filename)
+    except:
+        return None
+
+
+def load_particle_data(meta: metadata) -> Dict[str, Dict[str, Dict[str, SWIFTDataset]]]:
+    """
+    Loads the particle data (as swiftsimio objects), i.e. this does not yet actually read the data.
+    """
+
+    number_of_particles = meta.num_part
+    schemes = meta.schemes
+    kernels = meta.kernels
+
+    return {
+        num_part: {
+            kernel: {
+                scheme: load_safe(f"{num_part}/{kernel}/{scheme}/sodShock_0001.hdf5")
+                for scheme in schemes
+            }
+            for kernel in kernels
+        }
+        for num_part in number_of_particles
+    }
 
 
 def compute_analytic_solution(t: float) -> Tuple[Dict[str, Callable], List[float]]:
@@ -66,17 +102,101 @@ def chi_squared(observed, expected):
     return np.sum((diff * diff) / (expected * expected))
 
 
+def L1_norm(observed, expected):
+    """
+    Returns the L1 norm per particle.
+    """
+
+    norm = np.sum(abs(observed - expected)) / len(observed)
+
+    return float(norm)
+
+
+def L2_norm(observed, expected):
+    """
+    Returns the L2 norm per particle.
+    """
+
+    norm = np.sum((observed - expected) ** 2) / len(observed)
+
+    return float(norm)
+
+
+def calculate_norms(particle_data: dict):
+    """
+    Calculates both the L1 and L2 norms for all particle quantities that we have
+    available.
+    """
+
+
+    number_of_particles = list(particle_data.keys())
+    kernels = list(particle_data[number_of_particles[0]].keys())
+    schemes = list(particle_data[number_of_particles[0]][kernels[0]].keys())
+
+    smoothed_analytic_solution, x_pos = compute_analytic_solution(
+        t=particle_data[number_of_particles[0]][kernels[0]][schemes[0]].metadata.t.value
+    )
+
+    output = {}
+
+    for num_part in tqdm(number_of_particles):
+        output[num_part] = {}
+        for kernel in kernels:
+            output[num_part][kernel] = {}
+            for scheme in schemes:
+                this_data = particle_data[num_part][kernel][scheme]
+
+                if this_data == None:
+                    continue
+
+                this_output = {}
+
+                observed = dict(
+                    v=this_data.gas.velocities.value[:, 0],
+                    rho=this_data.gas.density.value,
+                    P=this_data.gas.pressure.value,
+                    u=this_data.gas.internal_energy.value,
+                    S=this_data.gas.entropy.value,
+                )
+
+
+                masked_coordinates = coordinates[mask]
+
+                for statistic in observed.keys():
+                    L1 = []
+                    L2 = []
+                    for point, x in enumerate(x_pos):
+                        # Select points close to the discontinuity
+                        coordinates = this_data.gas.coordinates.value[:, 0]
+
+                        mask = np.logical_and(
+                            coordinates > x - dx, coordinates < x + dx)
+
+                        L1.append(L1_norm(observed[statistic], smoothed_analytic_solution[statistic](
+                            masked_coordinates,
+                        )))
+                        L2.append(L2_norm(observed[statistic], smoothed_analytic_solution[statistic](
+                            masked_coordinates,
+                        )))
+
+                    this_output[statistic] = [L1, L2]
+                    
+                output[num_part][kernel][scheme] = this_output
+
+    return output
+
+
 if __name__ == "__main__":
     """
     Print out a number of statistics.
     """
 
-    dx = 0.05
 
     number_of_particles, threads = read_metadata()
+
     particle_data = load_particle_data(number_of_particles)
     smoothed_analytic_solution, x_pos = compute_analytic_solution(
-        t=particle_data[0].metadata.t.value
+        t=particle_data[16].metadata.t.value
     )
 
     print(x_pos)
