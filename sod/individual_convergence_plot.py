@@ -8,19 +8,18 @@ import yaml
 
 from scipy.optimize import curve_fit
 
+import matplotlib.ticker as mticker
+
+
 try:
     plt.style.use("spheric_durham")
 except:
     pass
 
 
-particle_properties = [
-    "pressure"
-]
+particle_properties = ["P"]
 
-particle_names = [
-    r"Pressure $P$"
-]
+particle_names = [r"Pressure $P$"]
 
 scheme_identifiers = [
     "gadget2",
@@ -28,7 +27,7 @@ scheme_identifiers = [
     "pressure-energy",
     "anarchy-pu",
     "gizmo-mfm",
-    "gizmo-mfv"
+    "gizmo-mfv",
 ]
 
 scheme_names = [
@@ -37,18 +36,23 @@ scheme_names = [
     "Pressure-Energy",
     "ANARCHY-PU",
     "SPH-ALE, FM",
-    ""
+    "",
 ]
+
+norms = [1, 2, 3]
+norm_names = ["Rarefaction Wave", "Contact Discontinuity", "Shock"]
 
 scheme_alphas = [0.5, 1.0, 1.0, 1.0, 1.0, 0.5]
 
 scheme_colours = [0, 0, 1, 3, 2, 2]
+
 
 def load_data(filename):
     with open(filename, "r") as handle:
         data = dict(yaml.load(handle))
 
     return data
+
 
 def extract_from_data(data, runtimes, scheme, kernel, property, norm):
     """
@@ -60,15 +64,10 @@ def extract_from_data(data, runtimes, scheme, kernel, property, norm):
     runtime = []
 
     for key, value in data.items():
+        # All datasets may not exist.
         try:
-            # All datasets may not exist.
-            norms.append(
-                value[kernel][scheme][property][norm-1]
-            )
-            runtime.append(
-                runtimes[key][kernel][scheme]
-            )
-
+            norms.append(value[kernel][scheme][property][norm - 1])
+            runtime.append(runtimes[key][kernel][scheme])
         except KeyError:
             pass
 
@@ -101,7 +100,7 @@ def fitted_line(x, y):
     popt, pcov = curve_fit(linear, x_log_2, y_log_2)
 
     new_x = np.linspace(x[0], x[-1], 100)
-    new_y = 2**(linear(np.log2(new_x), *popt))
+    new_y = 2 ** (linear(np.log2(new_x), *popt))
 
     return new_x, new_y
 
@@ -114,39 +113,46 @@ def make_plot(args):
     data = load_data(args.input)
     runtimes = load_data(args.runtime)
 
-    fig, ax = plt.subplots(1)
+    fig, ax = plt.subplots(1, 3, figsize=(2 * 3.5, 3.5 * 0.75))
 
-    ax = [ax]
+    ax = ax.flatten()
 
-    for a, pprop, pname in zip(ax, particle_properties, particle_names):
+    pprop = particle_properties[0]
+    pname = particle_properties[0]
+
+    for a, norm, norm_name in zip(ax, norms, norm_names):
         a.set_xscale("log", basex=10)
         a.set_yscale("log", basey=10)
+        a.yaxis.set_minor_formatter(mticker.ScalarFormatter())
+        a.yaxis.set_major_formatter(mticker.ScalarFormatter())
+        a.yaxis.set_minor_locator(mticker.AutoLocator())
+        a.yaxis.set_major_locator(mticker.AutoLocator())
+        a.set_title(norm_name)
 
-        a.set_xlabel("Runtime [s]")
-        a.set_ylabel(f"L{args.norm} Norm for {pname}")
-
-        for sid, sname, alpha, c in zip(scheme_identifiers, scheme_names, scheme_alphas, scheme_colours):
+        for sid, sname, alpha, c in zip(
+            scheme_identifiers, scheme_names, scheme_alphas, scheme_colours
+        ):
             this_data = extract_from_data(
-                data,
-                runtimes,
-                sid,
-                args.kernel,
-                pprop,
-                args.norm,
+                data, runtimes, sid, args.kernel, pprop, args.norm
             )
 
+            # Slightly different to other schemes as we have multiple norms
+            # per run here.
+            this_data = this_data[0], [x[norm] * 1e2 for x in this_data[1]]
             fitted_data = fitted_line(*this_data)
 
             a.scatter(*this_data, color=f"C{c}", s=2, alpha=alpha, zorder=alpha)
             a.plot(*fitted_data, color=f"C{c}", label=sname, alpha=alpha, zorder=alpha)
 
-    ax[-1].legend()
+    ax[1].set_xlabel("Runtime [s]")
+    ax[0].set_ylabel(f"$10^2 \\times$ L{args.norm} Norm for {pname}")
 
     fig.tight_layout()
     fig.savefig(filename(args))
 
     return
-    
+
+
 if __name__ == "__main__":
     import argparse as ap
 
@@ -160,7 +166,7 @@ if __name__ == "__main__":
         help="Kernel to use. Default: cubic-spline",
         required=False,
         type=str,
-        default="cubic-spline"
+        default="cubic-spline",
     )
 
     parser.add_argument(
@@ -169,7 +175,7 @@ if __name__ == "__main__":
         help="Norm to use. Default: 1",
         required=False,
         type=int,
-        default=1
+        default=1,
     )
 
     parser.add_argument(
@@ -178,7 +184,7 @@ if __name__ == "__main__":
         help="Output filename. Default: <kernel>_L<norm>_time.pdf",
         required=False,
         type=str,
-        default="DEFAULT"
+        default="DEFAULT",
     )
 
     parser.add_argument(
@@ -187,7 +193,7 @@ if __name__ == "__main__":
         help="Input filename. Default: norms.yml",
         required=False,
         type=str,
-        default="norms.yml"
+        default="norms.yml",
     )
 
     parser.add_argument(
@@ -196,7 +202,7 @@ if __name__ == "__main__":
         help="Runtime filename. Default: runtimes.yml",
         required=False,
         type=str,
-        default="runtimes.yml"
+        default="runtimes.yml",
     )
 
     args = parser.parse_args()

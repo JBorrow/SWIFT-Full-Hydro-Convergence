@@ -16,7 +16,7 @@ except:
     pass
 
 
-particle_properties = ["pressure"]
+particle_properties = ["P"]
 
 particle_names = [r"Pressure $P$"]
 
@@ -38,6 +38,9 @@ scheme_names = [
     "",
 ]
 
+norms = [1, 2, 3]
+norm_names = ["Rarefaction Wave", "Contact Discontinuity", "Shock"]
+
 scheme_alphas = [0.5, 1.0, 1.0, 1.0, 1.0, 0.5]
 
 scheme_colours = [0, 0, 1, 3, 2, 2]
@@ -57,18 +60,17 @@ def extract_from_data(data, runtimes, scheme, kernel, property, norm):
     """
 
     norms = []
-    runtime = []
+    nparts = []
 
     for key, value in data.items():
+        # All datasets may not exist.
         try:
-            # All datasets may not exist.
             norms.append(value[kernel][scheme][property][norm - 1])
-            runtime.append(runtimes[key][kernel][scheme])
-
+            nparts.append(key ** 3)
         except KeyError:
             pass
 
-    return runtime, norms
+    return nparts, norms
 
 
 def filename(args):
@@ -110,20 +112,17 @@ def make_plot(args):
     data = load_data(args.input)
     runtimes = load_data(args.runtime)
 
-    fig, ax = plt.subplots(1)
+    fig, ax = plt.subplots(1, 3, figsize=(2 * 3.5, 3.5 * 2 / 3))
 
-    ax = [ax]
+    ax = ax.flatten()
 
-    for a, pprop, pname in zip(ax, particle_properties, particle_names):
-        a.set_xscale("log", basex=10)
+    pprop = particle_properties[0]
+    pname = particle_properties[0]
+
+    for a, norm, norm_name in zip(ax, norms, norm_names):
+        a.set_xscale("log", basex=2)
         a.set_yscale("log", basey=10)
-        a.yaxis.set_minor_formatter(mticker.ScalarFormatter())
-        a.yaxis.set_major_formatter(mticker.ScalarFormatter())
-        a.yaxis.set_minor_locator(mticker.AutoLocator())
-        a.yaxis.set_major_locator(mticker.AutoLocator())
-
-        a.set_xlabel("Runtime [s]")
-        a.set_ylabel(f"L{args.norm} Norm for {pname}")
+        a.set_title(norm_name)
 
         for sid, sname, alpha, c in zip(
             scheme_identifiers, scheme_names, scheme_alphas, scheme_colours
@@ -132,10 +131,19 @@ def make_plot(args):
                 data, runtimes, sid, args.kernel, pprop, args.norm
             )
 
+            # Slightly different to other schemes as we have multiple norms
+            # per run here.
+            this_data = this_data[0], [x[norm] for x in this_data[1]]
             fitted_data = fitted_line(*this_data)
 
             a.scatter(*this_data, color=f"C{c}", s=2, alpha=alpha, zorder=alpha)
             a.plot(*fitted_data, color=f"C{c}", label=sname, alpha=alpha, zorder=alpha)
+
+            fitted_data_n = fitted_line([16 ** 3, 32 ** 3], [2e-2, 2e-2 / 2])
+            a.plot(*fitted_data_n, color="k", lw=1, ls="dashed")
+
+    ax[1].set_xlabel("Number of Particles")
+    ax[0].set_ylabel(f"L{args.norm} Norm for {pname}")
 
     ax[-1].legend()
 
