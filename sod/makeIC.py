@@ -52,6 +52,8 @@ pos_L = glass_L["/PartType0/Coordinates"][:,:] * 0.5
 pos_R = glass_R["/PartType0/Coordinates"][:,:] * 0.5
 h_L = glass_L["/PartType0/SmoothingLength"][:] * 0.5
 h_R = glass_R["/PartType0/SmoothingLength"][:] * 0.5
+v_ini_L = glass_L["/PartType0/Velocities"][:,:] * 0.5
+v_ini_R = glass_R["/PartType0/Velocities"][:,:] * 0.5
 
 # Merge things
 aa = pos_L - array([0.5, 0., 0.])
@@ -61,6 +63,7 @@ pos = append(pos_LL - array([1.0, 0., 0.]), pos_RR, axis=0)
 h_LL = append(h_L, h_L)
 h_RR = append(h_R, h_R)
 h = append(h_LL, h_RR)
+v = concatenate([v_ini_L, v_ini_L, v_ini_R, v_ini_R])
 
 numPart_L = size(h_LL)
 numPart_R = size(h_RR)
@@ -70,7 +73,6 @@ vol_L = 0.25
 vol_R = 0.25
 
 # Generate extra arrays
-v = zeros((numPart, 3))
 ids = linspace(1, numPart, numPart)
 m = zeros(numPart)
 u = zeros(numPart)
@@ -81,11 +83,11 @@ for i in range(numPart):
     if x < 0: #left
         u[i] = P_L / (rho_L * (gamma - 1.))
         m[i] = rho_L * vol_L / numPart_L
-        v[i,0] = v_L
+        v[i,0] += v_L
     else:     #right
         u[i] = P_R / (rho_R * (gamma - 1.))
         m[i] = rho_R * vol_R / numPart_R
-        v[i,0] = v_R
+        v[i,0] += v_R
         
 # Shift particles
 pos[:,0] -= x_min

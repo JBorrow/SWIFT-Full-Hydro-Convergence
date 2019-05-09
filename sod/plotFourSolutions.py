@@ -31,12 +31,12 @@ from swiftsimio import load
 from analyticSolution import analytic
 
 schemes = ["minimal", "pressure-energy", "anarchy-pu", "gizmo-mfm"]
-npart = 32
+npart = 16
 snap = 1
-kernel = "cubic-spline"
+kernel = "wendland-C2"
 names = ["Density-Energy", "Pressure-Energy", "ANARCHY-PU", "SPH-ALE"]
 key = "P"
-filename = "sodshock"
+filename = "sodShock"
 
 sim = load(f"{npart}/{kernel}/{schemes[0]}/{filename}_{snap:04d}.hdf5")
 
@@ -202,7 +202,7 @@ for scheme, name, axis in zip(schemes, names, ax):
         # No solution :(
         pass
 
-    axis.set_xlim(-0.4, 0.45)
+    axis.set_xlim(0.6, 1.5)
 
     try:
         axis.set_ylim(*ylim[key])

@@ -33,7 +33,7 @@ from analyticSolution import analytic
 schemes = ["minimal", "pressure-energy", "anarchy-pu", "gizmo-mfm"]
 npart = 32
 snap = 11
-kernel = "cubic-spline"
+kernel = "wendland-C2"
 names = ["Density-Energy", "Pressure-Energy", "ANARCHY-PU", "SPH-ALE"]
 key = "v_phi"
 filename = "gresho"

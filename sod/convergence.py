@@ -80,12 +80,16 @@ def compute_analytic_solution(t: float) -> Tuple[Dict[str, Callable], List[float
     routines.
     """
 
-    analytic_data, x_positions_for_convergence = analytic(t, return_x_positions_for_convergence=True)
+    analytic_data, x_positions_for_convergence = analytic(
+        t, return_x_positions_for_convergence=True
+    )
 
     x = analytic_data["x"]
 
     smoothed = {
-        k: interp1d(x, v, fill_value="extrapolate") for k, v in analytic_data.items() if k != "x"
+        k: interp1d(x, v, fill_value="extrapolate")
+        for k, v in analytic_data.items()
+        if k != "x"
     }
 
     return smoothed, x_positions_for_convergence
@@ -128,7 +132,6 @@ def calculate_norms(particle_data: dict):
     available.
     """
 
-
     number_of_particles = list(particle_data.keys())
     kernels = list(particle_data[number_of_particles[0]].keys())
     schemes = list(particle_data[number_of_particles[0]][kernels[0]].keys())
@@ -159,9 +162,6 @@ def calculate_norms(particle_data: dict):
                     S=this_data.gas.entropy.value,
                 )
 
-
-                masked_coordinates = coordinates[mask]
-
                 for statistic in observed.keys():
                     L1 = []
                     L2 = []
@@ -170,70 +170,67 @@ def calculate_norms(particle_data: dict):
                         coordinates = this_data.gas.coordinates.value[:, 0]
 
                         mask = np.logical_and(
-                            coordinates > x - dx, coordinates < x + dx)
+                            coordinates > x - dx, coordinates < x + dx
+                        )
 
-                        L1.append(L1_norm(observed[statistic], smoothed_analytic_solution[statistic](
-                            masked_coordinates,
-                        )))
-                        L2.append(L2_norm(observed[statistic], smoothed_analytic_solution[statistic](
-                            masked_coordinates,
-                        )))
+                        masked_coordinates = coordinates[mask]
+
+                        L1.append(
+                            L1_norm(
+                                observed[statistic][mask],
+                                smoothed_analytic_solution[statistic](
+                                    masked_coordinates
+                                ),
+                            )
+                        )
+                        L2.append(
+                            L2_norm(
+                                observed[statistic][mask],
+                                smoothed_analytic_solution[statistic](
+                                    masked_coordinates
+                                ),
+                            )
+                        )
 
                     this_output[statistic] = [L1, L2]
-                    
+
                 output[num_part][kernel][scheme] = this_output
 
     return output
 
 
 if __name__ == "__main__":
-    """
-    Print out a number of statistics.
-    """
+    import argparse as ap
 
-
-    number_of_particles, threads = read_metadata()
-
-    particle_data = load_particle_data(number_of_particles)
-    smoothed_analytic_solution, x_pos = compute_analytic_solution(
-        t=particle_data[16].metadata.t.value
+    parser = ap.ArgumentParser(
+        description="Script to make convergence DATA, not plot, for the Sod Shock"
     )
 
-    print(x_pos)
+    parser.add_argument(
+        "-m",
+        "--metadata",
+        help="Location of metadata file. Default: data.yml",
+        type=str,
+        required=False,
+        default="data.yml",
+    )
 
-    observed = [dict(
-        v=data.gas.velocities.value[:, 0],
-        rho=data.gas.density.value,
-        P=data.gas.pressure.value,
-        u=data.gas.internal_energy.value,
-        S=data.gas.entropy.value,
-    ) for data in particle_data]
+    parser.add_argument(
+        "-o",
+        "--output",
+        help="Output filename location. Default: norms.yml",
+        type=str,
+        required=False,
+        default="norms.yml",
+    )
 
-    for obs, data in zip(observed, particle_data):
-        print(f"Dataset with {data.metadata.n_gas} particles\n")
+    args = parser.parse_args()
 
-        for point, x in enumerate(x_pos):
-            print(f"Statistics at point x_{point+1}{point+2}\n")
-            coordinates = data.gas.coordinates.value[:, 0]
-            
-            mask = np.logical_and(coordinates > x - dx, coordinates < x + dx)
+    meta = read_metadata(args.metadata)
+    particle_data = load_particle_data(meta)
+    norms = calculate_norms(particle_data)
 
-            masked_coordinates = coordinates[mask]
-
-            for statistic in obs.keys():
-                value = chi_squared(
-                    obs[statistic][mask], smoothed_analytic_solution[statistic](
-                        masked_coordinates,
-                    )
-                )
-
-                reduced = value / data.metadata.n_gas
-
-                print(f"Chi Squared Statistic for {statistic} = {value:e}")
-                print(f"Reduced Chi Squared for {statistic} = {reduced:e}")
-            
-            print("\n")
-
-        print("\n\n")
+    with open(args.output, "w") as handle:
+        yaml.dump(norms, handle)
 
     exit(0)

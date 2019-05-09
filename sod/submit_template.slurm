@@ -21,7 +21,7 @@ do
 
         ln -s ../../../$npart/HYDRO/$kernel/sodShock.hdf5 ./sodShock.hdf5
 
-        ../../../../../build/$kernel/HYDRO/examples/swift --hydro --threads=28 ../../../sodShock.yml
+        ../../../../../build/$kernel/HYDRO/examples/swift --hydro --limiter --threads=28 ../../../sodShock.yml
         
         cd ../..
     done
