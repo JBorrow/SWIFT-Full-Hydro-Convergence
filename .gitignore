@@ -12,4 +12,7 @@
 */*.pdf
 */*/*.pdf
 
+*/norms.yml
+*/runtimes.yml
+
 *.DS_Store

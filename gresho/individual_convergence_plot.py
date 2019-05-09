@@ -9,23 +9,17 @@ import yaml
 from scipy.optimize import curve_fit
 
 try:
-    plt.style.use("mnras_durham")
+    plt.style.use("spheric_durham")
 except:
     pass
 
 
 particle_properties = [
-    "density",
-    "internal_energy",
-    "velocities_r",
-    "pressure"
+    "velocities_phi"
 ]
 
 particle_names = [
-    r"Density $\rho$",
-    r"Internal Energy $u$",
-    r"Radial Velocity $v_r$",
-    r"Pressure $P$"
+    r"Azimuthal Velocity $v_\phi$"
 ]
 
 scheme_identifiers = [
@@ -38,13 +32,17 @@ scheme_identifiers = [
 ]
 
 scheme_names = [
-    "Density-Entropy",
+    "",
     "Density-Energy",
     "Pressure-Energy",
     "ANARCHY-PU",
-    "GIZMO-MFM",
-    "GIZMO-MFV"
+    "SPH-ALE, FM",
+    ""
 ]
+
+scheme_alphas = [0.5, 1.0, 1.0, 1.0, 1.0, 0.5]
+
+scheme_colours = [0, 0, 1, 3, 2, 2]
 
 def load_data(filename):
     with open(filename, "r") as handle:
@@ -52,14 +50,14 @@ def load_data(filename):
 
     return data
 
-def extract_from_data(data, scheme, kernel, property, norm):
+def extract_from_data(data, runtimes, scheme, kernel, property, norm):
     """
     Returns two lists, the number of particles, and the <n> norm for that number of
     particles, for a given scheme.
     """
 
     norms = []
-    num_parts = []
+    runtime = []
 
     for key, value in data.items():
         try:
@@ -67,12 +65,14 @@ def extract_from_data(data, scheme, kernel, property, norm):
             norms.append(
                 value[kernel][scheme][property][norm-1]
             )
-            num_parts.append(key**3)
+            runtime.append(
+                runtimes[key][kernel][scheme]
+            )
 
         except KeyError:
             pass
 
-    return num_parts, norms
+    return runtime, norms
 
 
 def filename(args):
@@ -81,7 +81,7 @@ def filename(args):
     """
 
     if args.output == "DEFAULT":
-        return f"{args.kernel}_L{args.norm}_npart.pdf"
+        return f"{args.kernel}_L{args.norm}_time_individual.pdf"
     else:
         return args.output
 
@@ -112,31 +112,33 @@ def make_plot(args):
     """
 
     data = load_data(args.input)
+    runtimes = load_data(args.runtime)
 
-    fig, ax = plt.subplots(2, 2, sharex=True, figsize=(6.7, 6.7))
+    fig, ax = plt.subplots(1)
 
-    ax = ax.flatten()
+    ax = [ax]
 
     for a, pprop, pname in zip(ax, particle_properties, particle_names):
-        a.set_xscale("log", basex=2)
-        a.set_yscale("log", basey=2)
+        a.set_xscale("log", basex=10)
+        a.set_yscale("log", basey=10)
 
-        a.set_xlabel("Particle number")
+        a.set_xlabel("Runtime [s]")
         a.set_ylabel(f"L{args.norm} Norm for {pname}")
 
-        for (c, sid), sname in zip(enumerate(scheme_identifiers), scheme_names):
+        for sid, sname, alpha, c in zip(scheme_identifiers, scheme_names, scheme_alphas, scheme_colours):
             this_data = extract_from_data(
                 data,
+                runtimes,
                 sid,
                 args.kernel,
                 pprop,
-                args.norm
+                args.norm,
             )
 
             fitted_data = fitted_line(*this_data)
 
-            a.scatter(*this_data, color=f"C{c}", s=2)
-            a.plot(*fitted_data, color=f"C{c}", label=sname)
+            a.scatter(*this_data, color=f"C{c}", s=2, alpha=alpha, zorder=alpha)
+            a.plot(*fitted_data, color=f"C{c}", label=sname, alpha=alpha, zorder=alpha)
 
     ax[-1].legend()
 
@@ -173,19 +175,28 @@ if __name__ == "__main__":
     parser.add_argument(
         "-o",
         "--output",
-        help="Output filename. Default: <kernel>_L<norm>_npart.pdf",
+        help="Output filename. Default: <kernel>_L<norm>_time.pdf",
         required=False,
         type=str,
         default="DEFAULT"
     )
 
     parser.add_argument(
-        '-i',
+        "-i",
         "--input",
         help="Input filename. Default: norms.yml",
         required=False,
         type=str,
         default="norms.yml"
+    )
+
+    parser.add_argument(
+        "-r",
+        "--runtime",
+        help="Runtime filename. Default: runtimes.yml",
+        required=False,
+        type=str,
+        default="runtimes.yml"
     )
 
     args = parser.parse_args()
