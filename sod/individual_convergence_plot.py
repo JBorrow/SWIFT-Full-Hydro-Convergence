@@ -46,6 +46,8 @@ scheme_alphas = [0.5, 1.0, 1.0, 1.0, 1.0, 0.5]
 
 scheme_colours = [0, 0, 1, 3, 2, 2]
 
+highlight = 16
+
 
 def load_data(filename):
     with open(filename, "r") as handle:
@@ -113,6 +115,8 @@ def make_plot(args):
     data = load_data(args.input)
     runtimes = load_data(args.runtime)
 
+    which_highlight = np.where(np.array([x for x in data.keys()]) == highlight)[0][0]
+
     fig, ax = plt.subplots(1, 3, figsize=(2 * 3.5, 3.5 * 0.75))
 
     ax = ax.flatten()
@@ -142,6 +146,17 @@ def make_plot(args):
             fitted_data = fitted_line(*this_data)
 
             a.scatter(*this_data, color=f"C{c}", s=2, alpha=alpha, zorder=alpha)
+            a.scatter(
+                this_data[0][which_highlight],
+                this_data[1][which_highlight],
+                marker="*",
+                color=f"C{c}",
+                s=30,
+                alpha=alpha,
+                zorder=alpha + 10,
+                edgecolor="white",
+                linewidth=0.2,
+            )
             a.plot(*fitted_data, color=f"C{c}", label=sname, alpha=alpha, zorder=alpha)
 
     ax[1].set_xlabel("Runtime [s]")
