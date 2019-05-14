@@ -69,7 +69,7 @@ def extract_from_data(data, runtimes, scheme, kernel, property, norm):
         # All datasets may not exist.
         try:
             norms.append(value[kernel][scheme][property][norm - 1])
-            runtime.append(runtimes[key][kernel][scheme])
+            runtime.append(runtimes[key][kernel][scheme] / 1e6)
         except KeyError:
             pass
 
